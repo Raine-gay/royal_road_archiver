@@ -1,0 +1,12 @@
+{
+    "cSpell.words": [
+        "archiver",
+        "Audiobook",
+        "epub",
+        "Webnovel"
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "cSpell.ignoreWords": [
+        "royalroad"
+    ]
+}
