@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::Args;
 use url::Url;
 
+/// struct that corresponds to arguments for Audiobook generation.
 #[derive(Args, Debug)]
 pub struct AudiobookArgs {
     /// Disable the generation of chapter titles in the audio file. Useful to avoid chapter titles appearing twice.
@@ -14,6 +15,7 @@ pub struct AudiobookArgs {
     pub split_novel_by_chapters: bool,
 }
 
+/// struct that corresponds to arguments for Epub generation.
 #[derive(Args, Debug)]
 pub struct EpubArgs {
     /// Disable the inclusion of images.
@@ -22,11 +24,13 @@ pub struct EpubArgs {
     pub no_images: bool,
 }
 
+/// struct that corresponds to arguments for Html generation.
 #[derive(Args, Debug)]
 pub struct HtmlArgs {
 
 }
 
+/// struct that corresponds to arguments for Markdown generation.
 #[derive(Args, Debug)]
 pub struct MarkdownArgs {
     /// Disable the generation of chapter titles. Useful to avoid chapter titles appearing twice.
