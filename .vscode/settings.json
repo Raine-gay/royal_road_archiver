@@ -8,6 +8,8 @@
     "rust-analyzer.showUnlinkedFileNotification": false,
     "cSpell.ignoreWords": [
         "autotools",
+        "chrono",
+        "indicatif",
         "reqwest",
         "royalroad",
         "ureq"

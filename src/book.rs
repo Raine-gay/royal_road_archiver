@@ -1,3 +1,4 @@
+use indicatif::{ProgressBar, ProgressStyle};
 use scraper::Html;
 use url::Url;
 
@@ -9,10 +10,10 @@ pub struct Book {
     book_url: Url,
 
     /// The book's title.
-    title: String,
+    pub title: String,
 
     /// The book's author.
-    author: String,
+    pub author: String,
     
     /// A Url to the book's cover image.
     cover_image_url: Url,
@@ -21,7 +22,7 @@ pub struct Book {
     index_html: Html,
 
     /// A vector of the book's chapters.
-    chapters: Vec<Chapter>,
+    pub chapters: Vec<Chapter>,
 }
 
 impl Book {
@@ -33,10 +34,24 @@ impl Book {
 
         let mut chapters: Vec<Chapter> = Vec::with_capacity(chapter_names_and_urls.len());
 
+        println!("\nDownloading and processing chapters:");
+        // Spawn a progress bar showing how many chapters have been downloaded & processed.
+        let progress_bar = ProgressBar::new(chapter_names_and_urls.len().try_into().unwrap());
+        progress_bar.set_style(
+            ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {percent}%  ")
+                .unwrap()
+                .progress_chars("#>-"),
+        );
+
+        // Generate the chapters and add em to the book.
         for i in 0..chapter_names_and_urls.len() {
             let chapter = Chapter::new(&chapter_names_and_urls[i][0], &chapter_names_and_urls[i][1]);
             chapters.push(chapter);
+
+            progress_bar.inc(1);
         }
+
+        progress_bar.finish();
 
         Book { 
             book_url: book_url, 
@@ -56,18 +71,18 @@ impl Book {
 }
 
 /// A struct representing a chapter.
-struct Chapter {
+pub struct Chapter {
     /// The Url of the chapter.
     chapter_url: Url,
     
     /// The name of the chapter.
-    chapter_name: String,
+    pub chapter_name: String,
     
     /// The raw html data of the page.
     raw_chapter_html: Html,
 
     /// The isolated chapter html.
-    isolated_chapter_html: Html,
+    pub isolated_chapter_html: Html,
 }
 
 impl Chapter {
@@ -75,7 +90,7 @@ impl Chapter {
         let chapter_url = http::string_to_url(&chapter_url);
         let raw_chapter_html = html::string_to_html_document(&http::get_response(chapter_url.clone()).get_text());
 
-        Chapter { 
+        Chapter {
             chapter_url: chapter_url, 
             chapter_name: chapter_name.to_string(),
             raw_chapter_html: raw_chapter_html.clone(),

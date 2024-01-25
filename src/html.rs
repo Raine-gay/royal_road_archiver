@@ -139,3 +139,23 @@ pub fn isolate_chapter_content(raw_chapter_html: Html) -> Html {
     eprintln!("Error! Unable to isolate chapter content");
     exit(1);
 }
+
+/// Remove all img tags from the html fragment.
+pub fn remove_image_tags(html_fragment: Html) -> String {
+    let mut image_tags: Vec<String> = Vec::new();
+
+    let selector = Selector::parse("img").unwrap();
+    for element in html_fragment.select(&selector) {
+        if !image_tags.contains(&element.html()) {
+            image_tags.push(element.html());
+        }
+    }
+
+    let mut html_fragment = html_fragment.html();
+
+    for image_tag in image_tags {
+        html_fragment = html_fragment.replace(&image_tag, "");
+    }
+
+    return html_fragment;
+}
