@@ -2,8 +2,6 @@ use std::{fs::OpenOptions, io::Write, path::PathBuf, process::exit};
 
 use chrono::prelude::Local;
 use clap::Args;
-#[cfg(target_os = "windows")] 
-use path_slash::PathBufExt as _;
 use url::Url;
 
 
@@ -126,7 +124,9 @@ pub fn generate_markdown(markdown_args: MarkdownArgs, book_url: Url, output_dire
 fn convert_path_to_windows(path: PathBuf) -> PathBuf {
     // If target os is windows.
     #[cfg(target_os = "windows")] {
-        return PathBuf::from_slash(path);
+        use path_slash::PathBufExt as _;
+
+        return PathBuf::from_slash(path.into_os_string().into_string().unwrap());
     }
 
     // If target os is not windows.
