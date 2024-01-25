@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use indicatif::{ProgressBar, ProgressStyle};
 use scraper::Html;
 use url::Url;
@@ -23,6 +25,9 @@ pub struct Book {
 
     /// A vector of the book's chapters.
     pub chapters: Vec<Chapter>,
+
+    /// A hashmap representing the book image urls and their corresponding img html tags.
+    image_urls: HashMap<Url, Vec<String>>,
 }
 
 impl Book {
@@ -33,6 +38,8 @@ impl Book {
         let chapter_names_and_urls = html::get_chapter_names_and_urls_from_index(&index_html);
 
         let mut chapters: Vec<Chapter> = Vec::with_capacity(chapter_names_and_urls.len());
+
+        let mut image_urls: HashMap<Url, Vec<String>> = HashMap::new();
 
         println!("\nDownloading and processing chapters:");
         // Spawn a progress bar showing how many chapters have been downloaded & processed.
@@ -46,6 +53,10 @@ impl Book {
         // Generate the chapters and add em to the book.
         for i in 0..chapter_names_and_urls.len() {
             let chapter = Chapter::new(&chapter_names_and_urls[i][0], &chapter_names_and_urls[i][1]);
+
+            // extract the image urls and add em to the image_urls hashmap.
+
+
             chapters.push(chapter);
 
             progress_bar.inc(1);
@@ -60,6 +71,7 @@ impl Book {
             cover_image_url: http::string_to_url(&html::get_cover_image_url_from_index(&index_html)),
             index_html: index_html,
             chapters: chapters,
+            image_urls: image_urls,
         }
     }
 
@@ -97,11 +109,6 @@ impl Chapter {
             isolated_chapter_html: html::isolate_chapter_content(raw_chapter_html)
         }
     }
-}
-
-// TODO!
-struct BookImages {
-
 }
 
 // TODO!

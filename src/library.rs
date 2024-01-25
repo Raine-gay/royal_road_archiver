@@ -1,4 +1,4 @@
-use std::{fs::{File, OpenOptions}, io::Write, path::PathBuf, process::exit};
+use std::{fs::OpenOptions, io::Write, path::PathBuf, process::exit};
 
 use chrono::prelude::Local;
 use clap::Args;
@@ -60,7 +60,7 @@ pub fn generate_audiobook(audiobook_args: AudiobookArgs, book_url: Url, output_d
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
 pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathBuf) {
-    eprintln!("This is not implemented yet.");
+    let book = book::Book::new(book_url);
 }
 
 /// Generate an html archive from the given arguments, url, & outputs it to the output directory.

@@ -1,7 +1,8 @@
-use std::process::exit;
+use std::{collections::HashMap, process::exit};
 
 use regex::Regex;
 use scraper::{Html, Selector};
+use url::Url;
 
 /// Convert a string to an html document.
 pub fn string_to_html_document(document_string: &str) -> Html {
@@ -158,4 +159,12 @@ pub fn remove_image_tags(html_fragment: Html) -> String {
     }
 
     return html_fragment;
+}
+
+pub fn extract_urls_and_imgs_tag(chapter_html: Html) -> HashMap<Url, Vec<String>> {
+    let mut chapter_image_urls: HashMap<Url, Vec<String>> = HashMap::new();
+
+    
+
+    return chapter_image_urls;
 }
