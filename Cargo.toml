@@ -2,6 +2,8 @@
 name = "royal_road_archiver"
 version = "0.1.0"
 edition = "2021"
+description = "An archival program and library for the webnovel site RoyalRoad."
+license = "EUPL"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
