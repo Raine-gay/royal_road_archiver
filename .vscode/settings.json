@@ -12,6 +12,7 @@
         "TMPDIR",
         "autotools",
         "chrono",
+        "colour",
         "indicatif",
         "reftype",
         "reqwest",

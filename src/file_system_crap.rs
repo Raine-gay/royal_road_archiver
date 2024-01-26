@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::{io::Cursor, path::PathBuf, process::exit};
 
 use path_slash::PathBufExt as _;
+use tempdir::TempDir;
 
 /// Converts a given path to windows style if needed.
 pub fn convert_path_to_os_specific(path: PathBuf) -> PathBuf {
@@ -27,15 +28,47 @@ pub fn remove_illegal_chars(mut string: String) -> String {
 }
 
 /// Setup html2xhtml in the operating system's temp directory.
-pub fn setup_html2xhtml() {
+pub fn setup_html2xhtml() -> TempDir {
     #[cfg(target_os = "windows")] {
-        //TODO!
-        // Thinking of using C:\Users\<username>\AppData\Local\Temp\html2xhtml-windows
+        const HTML2XHTML: &[u8; 268299] = include_bytes!("../html2xhtml-windows.zip");
+        let html2xhtml_dir = match TempDir::new("html2xhtml-windows") {
+            Ok(temp_dir) => temp_dir,
+            Err(error) => {
+                eprintln!("Error! Unable to create temp directory: {error}");
+                exit(1);
+            }
+        };
+
+        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_dir.path(), true) {
+            Ok(_) => (),
+            Err(error) => {
+                eprintln!("Error! Unable to extract html2xhtml into into the temp directory\n{error}");
+                exit(1);
+            }
+        }
+
+        return html2xhtml_dir;
     }
 
     #[cfg(target_os = "linux")] {
-        // TODO!
-        // Thinking of using /tmp/html2xhtml-linux
+        const HTML2XHTML: &[u8; 186938] = include_bytes!("../html2xhtml-linux.zip");
+        let html2xhtml_dir = match TempDir::new("html2xhtml-linux") {
+            Ok(temp_dir) => temp_dir,
+            Err(error) => {
+                eprintln!("Error! Unable to create temp directory: {error}");
+                exit(1);
+            }
+        };
+
+        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_dir.path(), true) {
+            Ok(_) => (),
+            Err(error) => {
+                eprintln!("Error! Unable to extract html2xhtml into the temp directory\n{error}");
+                exit(1);
+            }
+        }
+
+        return html2xhtml_dir;
     }
 
     #[cfg(target_os = "macos")] {
@@ -45,6 +78,11 @@ pub fn setup_html2xhtml() {
 }
 
 /// Delete html2xhtml from the operating system's temp directory.
-pub fn delete_html2xhtml() {
-    // TODO!
+pub fn delete_html2xhtml(html2xhtml_dir: TempDir) {
+    match html2xhtml_dir.close() {
+        Ok(_) => (),
+        Err(warning) => {
+            eprintln!("Warning! Unable to close & delete temp directory: {warning}");
+        }
+    }
 }

@@ -115,7 +115,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
     epub_builder.inline_toc();
 
     // Setup html2xhtml on the operating system.
-    file_system_crap::setup_html2xhtml();
+    let html2xhtml_dir = file_system_crap::setup_html2xhtml();
 
     // TODO! Generate the epub body, deal with images etc etc. You know pickup from last night etc etc.
     // Finish setup_html2xhtml() first though dummy.
@@ -137,8 +137,8 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
     output_file.write_all(finished_epub.as_slice())
         .expect(format!("Unable to write finished epub data to {0}", output_path.to_string_lossy()).as_str());
 
-    // Delete html2xhtml from the temp directory. It's good to clean up after yourself.
-    file_system_crap::delete_html2xhtml();
+    // Delete the html2xhtml temp directory. It's good to clean up after yourself.
+    file_system_crap::delete_html2xhtml(html2xhtml_dir);
 }
 
 /// Generate an html archive from the given arguments, url, & outputs it to the output directory.

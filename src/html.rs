@@ -176,8 +176,8 @@ pub fn extract_urls_and_img_tag(chapter_html: &Html) -> HashMap<Url, Vec<String>
         if url.is_none() { continue; }
         let url = match Url::parse(url.unwrap()) {
             Ok(url) => url,
-            Err(error) => {
-                eprintln!("Warning! Unable to parse url on image tag: {image_tag}\n{error}");
+            Err(warning) => {
+                eprintln!("Warning! Unable to parse url on image tag: {image_tag}\n{warning}");
                 continue;
             },
         };
