@@ -11,7 +11,7 @@
 * Windows - Download the binaries (.exe files) for windows from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)    
   Unzip them into a folder E.G Downloads,  
   Open Command prompt,  
-  Change the directory to where you unzipped the binaries (.exe files) by typing ``cd <Binaries_Directory>\royal_road_archiver_windows-bin`` E.G ``cd Downloads\royal_road_archiver_windows-bin``,
+  Change the directory to where you unzipped the binaries (.exe files) by typing ``cd <Binaries_Directory>\royal_road_archiver_windows-bin`` E.G ``cd Downloads\royal_road_archiver_windows-bin``,  
   Open the program by typing ``royal_road_archiver.exe``
 
 * Linux - Basically the same as windows:
@@ -20,6 +20,10 @@
   Open console,
   ``cd`` to the folder containing the binaries,
   Run it using ``royal_road_archiver``
+  
+* Cargo - Run ``cargo install royal_road_archiver``,  
+  Then just run ``royal_road_archiver`` from the terminal.  
+  **DOES NOT WORK ON WINDOWS**
 
 ### Example commands:
 * ``royal_road_archiver https://www.royalroad.com/fiction/59450/bioshifter epub`` --- Will create an Epub version of the novel bioshifter in the current directory.  
