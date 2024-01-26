@@ -14,12 +14,12 @@
   Change the directory to where you unzipped the binaries (.exe files) by typing ``cd <Binaries_Directory>\royal_road_archiver_windows-bin`` E.G ``cd Downloads\royal_road_archiver_windows-bin``,  
   Open the program by typing ``royal_road_archiver.exe``
 
-* Linux - Basically the same as windows:
-  Download the linux binaries from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)
-  Unzip em,
-  Open console,
-  ``cd`` to the folder containing the binaries,
-  Run it using ``royal_road_archiver``
+* Linux - Basically the same as windows:  
+  Download the linux binaries from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)  
+  Unzip em,  
+  Open console,  
+  ``cd`` to the folder containing the binaries,  
+  Run it using ``royal_road_archiver``  
   
 * Cargo - Run ``cargo install royal_road_archiver``,  
   Then just run ``royal_road_archiver`` from the terminal.  
