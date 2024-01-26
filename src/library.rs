@@ -20,7 +20,7 @@ mod misc;
 #[derive(Args, Debug)]
 pub struct AudiobookArgs {
     /// Disable the generation of chapter titles in the audio file. Useful to avoid chapter titles appearing twice.
-    #[arg(short, long)]
+    #[arg(short='c', long)]
     pub no_chapter_titles: bool,
 
     /// Split the novel into multiple audio files by chapter.
@@ -47,11 +47,11 @@ pub struct HtmlArgs {
 #[derive(Args, Debug)]
 pub struct MarkdownArgs {
     /// Disable the generation of chapter titles. Useful to avoid chapter titles appearing twice.
-    #[arg(short, long)]
+    #[arg(short='c', long)]
     pub no_chapter_titles: bool,
 
     /// Disables the inclusion of html image tags in the markdown.
-    #[arg(short='i', long)]
+    #[arg(short, long)]
     pub no_image_tags: bool,
 }
 
