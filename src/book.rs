@@ -78,7 +78,7 @@ impl Book {
             cover_image_url: http::string_to_url(&html::get_cover_image_url_from_index(&index_html)),
             index_html: index_html,
             chapters: chapters,
-            image_urls_and_tags,
+            image_urls_and_tags: image_urls_and_tags,
         }
     }
 
