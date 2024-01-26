@@ -30,7 +30,7 @@ pub fn remove_illegal_chars(mut string: String) -> String {
 /// Setup html2xhtml in the operating system's temp directory.
 pub fn setup_html2xhtml() -> TempDir {
     #[cfg(target_os = "windows")] {
-        const HTML2XHTML: &[u8; 268299] = include_bytes!("../html2xhtml-windows.zip");
+        const HTML2XHTML: &[u8; 268299] = include_bytes!(r"..\html2xhtml-windows.zip");
         let html2xhtml_dir = match TempDir::new("html2xhtml-windows") {
             Ok(temp_dir) => temp_dir,
             Err(error) => {
