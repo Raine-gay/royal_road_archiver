@@ -5,12 +5,14 @@
         "dogshit",
         "epub",
         "stylesheet",
-        "Webnovel"
+        "Webnovel",
+        "webnovels"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
     "cSpell.ignoreWords": [
         "TMPDIR",
         "autotools",
+        "bioshifter",
         "chrono",
         "colour",
         "indicatif",

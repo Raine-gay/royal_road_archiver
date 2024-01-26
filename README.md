@@ -3,7 +3,7 @@
 * Epub generation - Turn the webnovels into an epub file for offline reading / archival.
 * Markdown generation - Turn the webnovels into a markdown file. ~~Dunno why you'd want to do this but hey, you can.~~
 
-#### Comming soon:
+#### Coming soon:
 * Audiobook generation support.
 * HTML + CSS archival. Think archive.org, but on your machine.
 
@@ -12,13 +12,13 @@
   Unzip them into a folder E.G Downloads,  
   Open Command prompt,  
   Change the directory to where you unzipped the binaries (.exe files) by typing ``cd <Binaries_Directory>\royal_road_archiver_windows-bin`` E.G ``cd Downloads\royal_road_archiver_windows-bin``,
-  Open the progam by typing ``royal_road_archiver.exe``
+  Open the program by typing ``royal_road_archiver.exe``
 
 * Linux - Basically the same as windows:
   Download the linux binaries from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)
   Unzip em,
   Open console,
-  ``cd`` to the folder containg the binaries,
+  ``cd`` to the folder containing the binaries,
   Run it using ``royal_road_archiver``
 
 ### Example commands:
