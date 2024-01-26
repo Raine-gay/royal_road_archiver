@@ -75,12 +75,6 @@ fn valid_directory_check(output_directory: &Path) {
             }
         }
     }
-
-    // Check if the user has write permissions:
-    if fs::metadata(output_directory).unwrap().permissions().readonly() {
-        eprintln!("Error! You do not have permissions for the specified directory.");
-        exit(1);
-    }
 }
 
 // Check if the given URL is a valid royalroad url.
