@@ -5,6 +5,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+opt-level = 'z'     # Optimize for size
+lto = true          # Enable link-time optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations
+panic = 'unwind'    # unwind on panic.
+strip = true        # Strip symbols from binary. Gives significant space reductions
+
 [lib]
 name = "royal_road_archiver_lib"
 path = "src/library.rs"
