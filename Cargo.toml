@@ -1,6 +1,6 @@
 [package]
 name = "royal_road_archiver"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "An archival program and library for the webnovel site RoyalRoad."
 license = "EUPL-1.2 "
@@ -19,7 +19,7 @@ name = "royal_road_archiver_lib"
 path = "src/library.rs"
 
 [[bin]]
-name = "royal_road_archiver_bin"
+name = "royal_road_archiver"
 path = "src/binary.rs"
 
 [dependencies]
