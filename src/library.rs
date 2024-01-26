@@ -65,13 +65,6 @@ pub fn generate_audiobook(audiobook_args: AudiobookArgs, book_url: Url, output_d
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
 pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathBuf) {
-    // Until xhtml is working on MacOS this notice & exit code will remain.
-    // See file_system_crap::setup_html2xhtml() for current status on MacOS support for this mode.
-    #[cfg(target_os = "macos")] { 
-        eprint!("Error! This mode does not currently support MacOS. Try either html mode or markdown mode.");
-        exit(1);
-    }
-
     let book = book::Book::new(book_url);
 
     // Initialize the epub builder.

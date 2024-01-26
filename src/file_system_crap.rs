@@ -75,6 +75,9 @@ pub fn setup_html2xhtml() -> TempDir {
     #[cfg(target_os = "macos")] {
         // TODO!
         // You can find the macos tempdir by doing: echo $TMPDIR
+
+        eprint!("Error! This mode does not currently support MacOS. Try either html mode or markdown mode.");
+        exit(1);
     }
 }
 
