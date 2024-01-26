@@ -43,10 +43,10 @@ fn main() {
     let output_directory: PathBuf;
     match cli_input.output_directory {
         Some(output_directory_input) => {
-            output_directory = Path::new(&output_directory_input).to_path_buf();
+            output_directory = PathBuf::from(&output_directory_input);
         },
         None => {
-            output_directory = env::current_dir().unwrap().as_path().to_path_buf();
+            output_directory = env::current_dir().unwrap();
         }
     }
 
@@ -61,7 +61,9 @@ fn main() {
     }
 }
 
-// Check if the directory exists and is writeable. Creates one if not.
+/// Check if the directory exists and is writeable. Creates one if not.
+/// 
+/// Exits the program of failure.
 fn valid_directory_check(output_directory: &Path) {
     // Check if the directory exists, if it does not; attempt to create one.
     if !output_directory.exists() {
@@ -95,7 +97,7 @@ fn valid_url_check(book_url: &str) -> Url {
             }
         },
         Err(error) => {
-            eprintln!("Error! Unable to parse url: {error}");
+            eprintln!("Error! Unable to parse url: {book_url}\n{error}");
             exit(1);
         }
     }

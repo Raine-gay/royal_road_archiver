@@ -1,24 +1,29 @@
 use std::collections::HashMap;
 
 use indicatif::{ProgressBar, ProgressStyle};
+use crate::misc::HashMapExt;
 use scraper::Html;
 use url::Url;
 
-use crate::{html, http};
+use crate::{file_system_crap::remove_illegal_chars, html, http};
 
 /// A struct representing a book & all the needed data to generate one.
 pub struct Book {
     /// The RoyalRoad Url for the book.
-    book_url: Url,
+    pub book_url: Url,
 
     /// The book's title.
     pub title: String,
+
+    /// Book title used for the filename.
+    /// Should have illegal chars expunged via file_system_crap::remove_illegal_chars.
+    pub file_name_title: String,
 
     /// The book's author.
     pub author: String,
     
     /// A Url to the book's cover image.
-    cover_image_url: Url,
+    pub cover_image_url: Url,
 
     /// The raw html data of the RoyalRoad index page.
     index_html: Html,
@@ -27,7 +32,7 @@ pub struct Book {
     pub chapters: Vec<Chapter>,
 
     /// A hashmap representing the book image urls and their corresponding img html tags.
-    image_urls: HashMap<Url, Vec<String>>,
+    pub image_urls_and_tags: HashMap<Url, Vec<String>>,
 }
 
 impl Book {
@@ -36,10 +41,9 @@ impl Book {
         let index_html = html::string_to_html_document(&http::get_response(book_url.clone()).get_text());
 
         let chapter_names_and_urls = html::get_chapter_names_and_urls_from_index(&index_html);
-
         let mut chapters: Vec<Chapter> = Vec::with_capacity(chapter_names_and_urls.len());
 
-        let mut image_urls: HashMap<Url, Vec<String>> = HashMap::new();
+        let mut image_urls_and_tags: HashMap<Url, Vec<String>> = HashMap::new();
 
         println!("\nDownloading and processing chapters:");
         // Spawn a progress bar showing how many chapters have been downloaded & processed.
@@ -54,8 +58,8 @@ impl Book {
         for i in 0..chapter_names_and_urls.len() {
             let chapter = Chapter::new(&chapter_names_and_urls[i][0], &chapter_names_and_urls[i][1]);
 
-            // extract the image urls and add em to the image_urls hashmap.
-
+            // extract the image urls and add em to the image_urls_and_tags hashmap.
+            image_urls_and_tags = image_urls_and_tags.join(html::extract_urls_and_img_tag(&chapter.isolated_chapter_html));
 
             chapters.push(chapter);
 
@@ -64,14 +68,17 @@ impl Book {
 
         progress_bar.finish();
 
+        let title = html::get_title_from_index(&index_html);
+
         Book { 
             book_url: book_url, 
-            title: html::get_title_from_index(&index_html),
+            title: title.clone(),
+            file_name_title: remove_illegal_chars(title),
             author: html::get_author_from_index(&index_html),
             cover_image_url: http::string_to_url(&html::get_cover_image_url_from_index(&index_html)),
             index_html: index_html,
             chapters: chapters,
-            image_urls: image_urls,
+            image_urls_and_tags,
         }
     }
 
@@ -90,7 +97,7 @@ pub struct Chapter {
     /// The name of the chapter.
     pub chapter_name: String,
     
-    /// The raw html data of the page.
+    /// The raw html data of the chapter page.
     raw_chapter_html: Html,
 
     /// The isolated chapter html.
@@ -105,13 +112,8 @@ impl Chapter {
         Chapter {
             chapter_url: chapter_url, 
             chapter_name: chapter_name.to_string(),
-            raw_chapter_html: raw_chapter_html.clone(),
-            isolated_chapter_html: html::isolate_chapter_content(raw_chapter_html)
+            isolated_chapter_html: html::isolate_chapter_content(&raw_chapter_html),
+            raw_chapter_html: raw_chapter_html,
         }
     }
-}
-
-// TODO!
-struct BookCss {
-
 }

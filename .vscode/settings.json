@@ -2,16 +2,21 @@
     "cSpell.words": [
         "archiver",
         "Audiobook",
+        "dogshit",
         "epub",
+        "stylesheet",
         "Webnovel"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
     "cSpell.ignoreWords": [
+        "TMPDIR",
         "autotools",
         "chrono",
         "indicatif",
+        "reftype",
         "reqwest",
         "royalroad",
+        "tempdir",
         "ureq"
     ]
 }

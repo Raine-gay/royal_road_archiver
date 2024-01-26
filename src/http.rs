@@ -56,7 +56,7 @@ pub fn string_to_url(url: &str) -> Url {
     match Url::parse(url) {
         Ok(url) => url,
         Err(error) => {
-            eprintln!("Error! Unable to parse: {url} into a valid url.");
+            eprintln!("Error! Unable to parse: {url} into a valid url.\n{error}");
             exit(1);
         }
     }

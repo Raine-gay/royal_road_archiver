@@ -4,6 +4,8 @@ use regex::Regex;
 use scraper::{Html, Selector};
 use url::Url;
 
+use crate::misc::HashMapExt;
+
 /// Convert a string to an html document.
 pub fn string_to_html_document(document_string: &str) -> Html {
     Html::parse_document(document_string)
@@ -123,7 +125,7 @@ pub fn get_chapter_names_and_urls_from_index(index_html: &Html) -> Vec<[String; 
 }
 
 /// Isolate chapter content from the rest of the shit on the page.
-pub fn isolate_chapter_content(raw_chapter_html: Html) -> Html {
+pub fn isolate_chapter_content(raw_chapter_html: &Html) -> Html {
     let page_html = Html::parse_document(&raw_chapter_html.html());
 
     let selector = Selector::parse("div").unwrap();
@@ -142,7 +144,7 @@ pub fn isolate_chapter_content(raw_chapter_html: Html) -> Html {
 }
 
 /// Remove all img tags from the html fragment.
-pub fn remove_image_tags(html_fragment: Html) -> String {
+pub fn remove_image_tags(html_fragment: &Html) -> String {
     let mut image_tags: Vec<String> = Vec::new();
 
     let selector = Selector::parse("img").unwrap();
@@ -161,10 +163,29 @@ pub fn remove_image_tags(html_fragment: Html) -> String {
     return html_fragment;
 }
 
-pub fn extract_urls_and_imgs_tag(chapter_html: Html) -> HashMap<Url, Vec<String>> {
+/// Extract the urls and image tags from a chapter and put them in the hashmap:
+/// ``Hashmap<Url, Vec<String>>``
+pub fn extract_urls_and_img_tag(chapter_html: &Html) -> HashMap<Url, Vec<String>> {
     let mut chapter_image_urls: HashMap<Url, Vec<String>> = HashMap::new();
 
-    
+    let selector = Selector::parse("img").unwrap();
+    for element in chapter_html.select(&selector) {
+        let url = element.attr("src");
+        let image_tag = element.html();
+
+        if url.is_none() { continue; }
+        let url = match Url::parse(url.unwrap()) {
+            Ok(url) => url,
+            Err(error) => {
+                eprintln!("Warning! Unable to parse url on image tag: {image_tag}\n{error}");
+                continue;
+            },
+        };
+
+        let temp_map: HashMap<Url, Vec<String>> = HashMap::from([(url, vec![image_tag])]);
+
+        chapter_image_urls = chapter_image_urls.join(temp_map);
+    }
 
     return chapter_image_urls;
 }
