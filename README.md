@@ -1,4 +1,4 @@
-### Terminal based Archival Program for RoyalRoad.
+### Terminal based archival Program for RoyalRoad.
 #### Currently supports:
 * Epub generation - Turn the webnovels into an epub file for offline reading / archival.
 * Markdown generation - Turn the webnovels into a markdown file. ~~Dunno why you'd want to do this but hey, you can.~~
