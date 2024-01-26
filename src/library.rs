@@ -1,9 +1,12 @@
-use std::{fs::OpenOptions, io::Write, path::PathBuf, process::exit};
+use std::{collections::HashMap, fs::OpenOptions, io::Write, path::PathBuf, process::exit};
 
+use bytes::Buf;
 use chrono::prelude::Local;
 use clap::Args;
 use epub_builder::{EpubBuilder, EpubContent, ReferenceType, ZipLibrary};
 use file_system_crap::convert_path_to_os_specific;
+use html::{html_to_xhtml, remove_image_tags, string_to_html_fragment};
+use indicatif::{ProgressBar, ProgressStyle};
 use url::Url;
 
 mod book;
@@ -80,18 +83,23 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
         .expect("Unable to add title metadata");
 
     // Download the cover image & add it to the epub.
-    let cover_image = http::get_response(book.cover_image_url).get_bytes().to_vec();
-    epub_builder.add_cover_image("cover.jpeg", cover_image.as_slice(), "image/jpeg").expect("Unable to add cover image.");
+    let cover_image = http::get_response(book.cover_image_url);
+    let (cover_mime_type, cover_file_extension) = cover_image.get_content_type_and_file_extension();
+    epub_builder.add_cover_image(
+        format!("cover.{cover_file_extension}"), 
+        cover_image.get_bytes().to_vec().as_slice(), 
+        cover_mime_type).expect("Error! Unable to add cover image.");
 
     // Generate the cover xhtml.
     let cover_xhtml = format!(
         r#"<head></head><body><div style="text-align: center;">
         <h1><a href="{0}">{1}</a></h1>
-        <img src="cover.jpeg"/>
-        <h2>by: {2}</h2>
-        <h3>Archived on: {3}</h3></div></body>"#,
+        <img src="cover.{2}"/>
+        <h2>by: {3}</h2>
+        <h3>Archived on: {4}</h3></div></body>"#,
         book.book_url,
         book.title,
+        cover_file_extension,
         book.author,
         chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, false)
     );
@@ -102,7 +110,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
         EpubContent::new("title.xhtml", cover_xhtml.as_bytes())
             .title("Cover")
             .reftype(ReferenceType::Cover),
-    ).expect("Unable to add cover");
+    ).expect("Error! Unable to add cover");
 
     // Add a table of contents after the cover page.
     epub_builder.inline_toc();
@@ -110,8 +118,60 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
     // Setup html2xhtml on the operating system.
     let html2xhtml_dir = file_system_crap::setup_html2xhtml();
 
-    // TODO! Generate the epub body, deal with images etc etc. You know pickup from last night etc etc.
-    // Finish setup_html2xhtml() first though dummy.
+    let mut old_tags_new_tags: HashMap<String, String> = HashMap::new();
+
+    if !epub_args.no_images {
+        // Download the images and add em to the epub.
+
+        println!("\nDownloading and processing images:");
+        // Spawn a progress bar showing how many images have been downloaded & processed.
+        let progress_bar = ProgressBar::new(book.image_urls_and_tags.keys().len().try_into().unwrap());
+        progress_bar.set_style(
+            ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {percent}%  ")
+                .unwrap()
+                .progress_chars("#>-"),
+        );
+
+        let mut i: usize = 0;
+        for image_url in book.image_urls_and_tags.keys() {
+            let image = http::get_response(image_url.clone());
+            let (image_mime_type, image_file_extension) = image.get_content_type_and_file_extension();
+            epub_builder.add_resource(
+                format!("image_{i}.{image_file_extension}"), 
+                image.get_bytes().to_vec().reader(), 
+                image_mime_type).expect("Error! Unable to add content image");
+            
+            for image_tag in book.image_urls_and_tags[image_url].clone() {
+                old_tags_new_tags.insert(image_tag.clone(), html::replace_img_src(image_tag, format!("image_{i}.{image_file_extension}")));
+            }
+
+            i+=1;
+            progress_bar.inc(1);
+        }
+
+        progress_bar.finish();
+    }
+
+    // Convert the html to xhtml and add the xhtml to the epub for each chapter.
+    for (i, chapter) in book.chapters.iter().enumerate() {
+
+        let xhtml: String;
+        if epub_args.no_images {
+            xhtml = html_to_xhtml(string_to_html_fragment(&remove_image_tags(&chapter.isolated_chapter_html)), &html2xhtml_dir)
+        }
+        else {
+            let mut replaced_html = chapter.isolated_chapter_html.html();
+            for old_img_tag in old_tags_new_tags.keys() {
+                replaced_html = replaced_html.replace(&old_img_tag.clone(), &old_tags_new_tags[old_img_tag]);
+            }
+
+            xhtml = html_to_xhtml(string_to_html_fragment(&replaced_html), &html2xhtml_dir);
+        }
+
+        epub_builder.add_content(EpubContent::new(format!("chapter_{}.xhtml", i+1), xhtml.as_bytes())
+            .title(chapter.chapter_name.clone())
+            .reftype(ReferenceType::Text)).expect("Error! Unable to add chapter");
+    }
 
     // Generate the finished epub data as a byte vector.
     let mut finished_epub: Vec<u8> = vec![];

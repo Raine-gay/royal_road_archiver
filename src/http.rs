@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{collections::HashMap, process::exit};
 
 use reqwest::{blocking::Response, header::HeaderMap};
 use url::Url;
@@ -34,6 +34,34 @@ impl HttpResponse {
                 eprintln!("Error! Unable to convert response from {0} into bytes\n{error}", self.url);
                 exit(1);
             }
+        }
+    }
+
+    /// Attempt to get the content(mime)-type and file extension from the http-header.
+    /// 
+    /// If the content-type header value can not be found it will warn the use and return empty strings.
+    pub fn get_content_type_and_file_extension(&self) -> (String, String) {
+        // A hashmap to convert mime-types to file extensions.
+        let mime_to_file_extension: HashMap<&str, &str> = HashMap::from([
+            ("image/png",  "png"),
+            ("image/webp", "webp"),
+            ("image/jpeg", "jpeg"),
+            ("image/jpg",  "jpg"),
+        ]);
+
+        let content_type = match self.get_headers()["content-type"].to_str() {
+            Ok(content_type) => content_type,
+            Err(warning) => {
+                eprintln!("Warning! Unable to get content type from the http-header: {warning}");
+                return (String::with_capacity(0), String::with_capacity(0));
+            }
+        };
+
+        if mime_to_file_extension.contains_key(content_type) {
+            return (content_type.to_string(), mime_to_file_extension[content_type].to_string());
+        }
+        else {
+            return (content_type.to_string(), String::with_capacity(0));
         }
     }
 }

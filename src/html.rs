@@ -1,7 +1,8 @@
-use std::{collections::HashMap, process::exit};
+use std::{collections::HashMap, io::Write, process::{exit, Command, Stdio}};
 
 use regex::Regex;
 use scraper::{Html, Selector};
+use tempdir::TempDir;
 use url::Url;
 
 use crate::misc::HashMapExt;
@@ -188,4 +189,62 @@ pub fn extract_urls_and_img_tag(chapter_html: &Html) -> HashMap<Url, Vec<String>
     }
 
     return chapter_image_urls;
+}
+
+/// Replace the image tag with new one that contains the new src attribute.
+pub fn replace_img_src(img_tag: String, new_src: String) -> String {
+    let img_tag = string_to_html_fragment(&img_tag);
+
+    let selector = Selector::parse("img").unwrap();
+    let element = img_tag.select(&selector).next().unwrap();
+
+
+    if element.attr("src").is_some() {
+        let image_tag = element.html();
+
+        let src_match_regex = Regex::new(r#"(src=["'].*["'])"#).unwrap();
+        let src_attr = src_match_regex.captures(&image_tag).unwrap().get(0).map(|m| m.as_str()).unwrap();
+
+        return image_tag.replace(src_attr, &format!(r#"src="{new_src}""#));
+    }
+    else {
+        return element.html();
+    }
+}
+
+/// Convert a given html dom into xhtml.
+pub fn html_to_xhtml(html: Html, html2xhtml_dir: &TempDir) -> String {
+    #[cfg(target_os = "windows")]
+    const HTML2XHTML_ENTRY: &str = "html2xhtml.exe";
+
+    #[cfg(target_os = "linux")]
+    const HTML2XHTML_ENTRY: &str = "html2xhtml";
+
+    #[cfg(target_os = "macos")]
+    const HTML2XHTML_ENTRY: &str = "html2xhtml";
+
+    // Remove nbsp, They can cause certain e-readers to crash.
+    let html = html.html().replace("&nbsp;", " ");
+
+    // Start html2xhtml.
+    let mut html2xhtml = match Command::new(html2xhtml_dir.path().join(HTML2XHTML_ENTRY))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(error) => {
+            eprintln!("Error! Unable to start html2xhtml: {error}");
+            exit(1);
+        },
+    };
+
+    // Write the html to the stdin, then wait for xhtml to be outputted to the stdout.
+    html2xhtml.stdin.as_mut().unwrap().write_all(html.as_bytes()).unwrap();
+    let html2xhtml_output = html2xhtml.wait_with_output().unwrap();
+
+    // Generate a lossy string from the stdout.
+    let xhtml = String::from_utf8_lossy(&html2xhtml_output.stdout).to_string();
+
+    return xhtml;
 }
