@@ -23,7 +23,7 @@
   
 * Cargo - Run ``cargo install royal_road_archiver``,  
   Then just run ``royal_road_archiver`` from the terminal.  
-  **DOES NOT WORK ON WINDOWS**
+  **DOES NOT WORK ON WINDOWS.**  
 
 ### Example commands:
 * ``royal_road_archiver https://www.royalroad.com/fiction/59450/bioshifter epub`` --- Will create an Epub version of the novel bioshifter in the current directory.  
