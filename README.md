@@ -8,14 +8,14 @@
 * HTML + CSS archival. Think archive.org, but on your machine.
 
 ### How to use:
-* Windows - Download the binaries (.exe files) for windows from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)    
+* Windows - Download the binaries (.exe files) for windows from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases)    
   Unzip them into a folder E.G Downloads,  
   Open Command prompt,  
   Change the directory to where you unzipped the binaries (.exe files) by typing ``cd <Binaries_Directory>\royal_road_archiver_windows-bin`` E.G ``cd Downloads\royal_road_archiver_windows-bin``,  
   Open the program by typing ``royal_road_archiver.exe``
 
 * Linux - Basically the same as windows:  
-  Download the linux binaries from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases/tag/RoyalRoad_Archiver-Release)  
+  Download the linux binaries from the [releases page,](https://github.com/Raine-gay/royal_road_archiver/releases)  
   Unzip em,  
   Open console,  
   ``cd`` to the folder containing the binaries,  
