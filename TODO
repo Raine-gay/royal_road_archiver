@@ -1,0 +1,1 @@
+Make images download to disk then read from there to avoid high ram usage when processing books that are image heavy.

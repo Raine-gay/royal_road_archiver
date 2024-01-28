@@ -1522,7 +1522,7 @@ dependencies = [
 
 [[package]]
 name = "royal_road_archiver"
-version = "0.1.1"
+version = "1.0.1"
 dependencies = [
  "bytes",
  "chrono",
@@ -1530,12 +1530,14 @@ dependencies = [
  "epub-builder",
  "html2md",
  "indicatif",
+ "lazy_static",
  "path-slash",
  "regex",
  "reqwest",
  "scraper",
  "serde_json",
  "tempdir",
+ "thiserror",
  "url",
  "zip-extract",
 ]

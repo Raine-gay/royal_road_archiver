@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::OpenOptions, io::Write, path::PathBuf, process::exit};
+use std::{collections::HashMap, fs::OpenOptions, io::Write, path::PathBuf, process::exit, sync::{Mutex, MutexGuard}};
 
 use bytes::Buf;
 use chrono::prelude::Local;
@@ -6,7 +6,11 @@ use clap::Args;
 use epub_builder::{EpubBuilder, EpubContent, ReferenceType, ZipLibrary};
 use file_system_crap::convert_path_to_os_specific;
 use html::{html_to_xhtml, remove_image_tags, string_to_html_fragment};
+use lazy_static::lazy_static;
 use indicatif::{ProgressBar, ProgressStyle};
+use misc::Oses;
+use reqwest::header::ToStrError;
+use thiserror::Error;
 use url::Url;
 
 mod book;
@@ -55,20 +59,24 @@ pub struct MarkdownArgs {
     pub no_image_tags: bool,
 }
 
+lazy_static! {
+    static ref WARNINGS: Mutex<GenerationWarnings> = Mutex::new(GenerationWarnings::new());
+}
+
 /// Generate an audiobook from the given arguments, url, & outputs it to the output directory.
 /// 
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
-pub fn generate_audiobook(audiobook_args: AudiobookArgs, book_url: Url, output_directory: PathBuf) {
-    eprintln!("This is not implemented yet.");
+pub fn generate_audiobook(audiobook_args: AudiobookArgs, book_url: Url, output_directory: PathBuf) -> Result<MutexGuard<'static, GenerationWarnings>, GenerationError> {
+    return Err(GenerationError::GenerationUnsupportedError);
 }
 
 /// Generate an epub file from the given arguments, url, & outputs it to the output directory.
 /// 
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
-pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathBuf) {
-    let book = book::Book::new(book_url);
+pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathBuf) -> Result<MutexGuard<'static, GenerationWarnings>, GenerationError> {
+    let book = book::Book::new(book_url)?;
 
     // Initialize the epub builder.
     let mut epub_builder = EpubBuilder::new(ZipLibrary::new().unwrap()).unwrap();
@@ -83,11 +91,11 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
         .expect("Unable to add title metadata");
 
     // Download the cover image & add it to the epub.
-    let cover_image = http::get_response(book.cover_image_url);
+    let cover_image = http::get_response(book.cover_image_url)?;
     let (cover_mime_type, cover_file_extension) = cover_image.get_content_type_and_file_extension();
     epub_builder.add_cover_image(
         format!("cover.{cover_file_extension}"), 
-        cover_image.get_bytes().to_vec().as_slice(), 
+        cover_image.get_bytes()?.to_vec().as_slice(), 
         cover_mime_type).expect("Error! Unable to add cover image.");
 
     // Generate the cover xhtml.
@@ -116,7 +124,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
     epub_builder.inline_toc();
 
     // Setup html2xhtml on the operating system.
-    let html2xhtml_dir = file_system_crap::setup_html2xhtml();
+    let html2xhtml_dir = file_system_crap::setup_html2xhtml()?;
 
     let mut old_tags_new_tags: HashMap<String, String> = HashMap::new();
 
@@ -134,11 +142,11 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
 
         let mut i: usize = 0;
         for image_url in book.image_urls_and_tags.keys() {
-            let image = http::get_response(image_url.clone());
+            let image = http::get_response(image_url.clone())?;
             let (image_mime_type, image_file_extension) = image.get_content_type_and_file_extension();
             epub_builder.add_resource(
                 format!("image_{i}.{image_file_extension}"), 
-                image.get_bytes().to_vec().reader(), 
+                image.get_bytes()?.to_vec().reader(), 
                 image_mime_type).expect("Error! Unable to add content image");
             
             for image_tag in book.image_urls_and_tags[image_url].clone() {
@@ -157,7 +165,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
 
         let xhtml: String;
         if epub_args.no_images {
-            xhtml = html_to_xhtml(string_to_html_fragment(&remove_image_tags(&chapter.isolated_chapter_html)), &html2xhtml_dir)
+            xhtml = html_to_xhtml(string_to_html_fragment(&remove_image_tags(&chapter.isolated_chapter_html)), &html2xhtml_dir)?
         }
         else {
             let mut replaced_html = chapter.isolated_chapter_html.html();
@@ -165,7 +173,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
                 replaced_html = replaced_html.replace(&old_img_tag.clone(), &old_tags_new_tags[old_img_tag]);
             }
 
-            xhtml = html_to_xhtml(string_to_html_fragment(&replaced_html), &html2xhtml_dir);
+            xhtml = html_to_xhtml(string_to_html_fragment(&replaced_html), &html2xhtml_dir)?;
         }
 
         epub_builder.add_content(EpubContent::new(format!("chapter_{}.xhtml", i+1), xhtml.as_bytes())
@@ -192,22 +200,24 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
 
     // Delete the html2xhtml temp directory. It's good to clean up after yourself.
     file_system_crap::delete_html2xhtml(html2xhtml_dir);
+
+    Ok(WARNINGS.lock().unwrap())
 }
 
 /// Generate an html archive from the given arguments, url, & outputs it to the output directory.
 /// 
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
-pub fn generate_html(html_args: HtmlArgs, book_url: Url, output_directory: PathBuf) {
-    eprintln!("This is not implemented yet.");
+pub fn generate_html(html_args: HtmlArgs, book_url: Url, output_directory: PathBuf) -> Result<MutexGuard<'static, GenerationWarnings>, GenerationError> {
+    return Err(GenerationError::GenerationUnsupportedError);
 }
 
 /// Generate a markdown file from the given arguments, url, & outputs it to the output directory.
 /// 
 /// This function DOES NOT do any error checking on the Url or output directory & WILL panic if they are wrong. 
 /// Make sure the Url is valid and the output directory is writable BEFORE passing them to this.
-pub fn generate_markdown(markdown_args: MarkdownArgs, book_url: Url, output_directory: PathBuf) {
-    let book = book::Book::new(book_url);
+pub fn generate_markdown(markdown_args: MarkdownArgs, book_url: Url, output_directory: PathBuf) -> Result<MutexGuard<'static, GenerationWarnings>, GenerationError> {
+    let book = book::Book::new(book_url)?;
 
     let output_path = convert_path_to_os_specific(output_directory.join(format!("{0}.md", book.file_name_title)));
 
@@ -215,8 +225,7 @@ pub fn generate_markdown(markdown_args: MarkdownArgs, book_url: Url, output_dire
     let mut output_file = match OpenOptions::new().write(true).create_new(true).open(&output_path) {
         Ok(output_file) => output_file,
         Err(error) => {
-            eprintln!("Error! Unable to create: {0}\n{error}", output_path.to_string_lossy());
-            exit(1);
+            return Err(GenerationError::FileCreationError{error, file_path: output_path});
         }
     };
 
@@ -247,5 +256,127 @@ pub fn generate_markdown(markdown_args: MarkdownArgs, book_url: Url, output_dire
         }
 
         output_file.write_all(buf.as_bytes()).unwrap();
+    }
+
+    Ok(WARNINGS.lock().unwrap())
+}
+
+/// An error struct representing all the documented errors that can occur while archiving a RoyalRoad webnovel.
+#[derive(Error, Debug)]
+pub enum GenerationError {
+    /// Represents errors during file creation.
+    #[error("Unable to create file: {file_path}\n{error}")]
+    FileCreationError{error: std::io::Error, file_path: PathBuf},
+
+    /// Represents errors when getting a Response from a Url.
+    #[error("Unable to get response for: {url}\n{error}")]
+    ResponseGetError{error: reqwest::Error, url: Url},
+
+    /// Represents errors when converting a Response to a String.
+    #[error("Unable to convert response to text: {error}")]
+    ResponseConvertToTextError{error: reqwest::Error},
+
+    /// Represents errors when converting a Response to Bytes.
+    #[error("Unable to convert response to bytes: {error}")]
+    ResponseConvertToBytesError{error: reqwest::Error},
+
+    /// Represents errors when trying to parse a String to a Url.
+    #[error("Unable to parse a valid Url from: {string_url}\n{error}")]
+    UrlParseError{error: url::ParseError, string_url: String},
+
+    /// Represents io errors when trying to create a temporary directory.
+    #[error("Unable to create temporary directory: {error}")]
+    TempDirCreationError{error: std::io::Error},
+
+    /// Represents an error when trying to extract the html2xhtml binaries into the temporary directory.
+    #[error("Unable to extract html2xhtml into the temporary directory: {error}")]
+    Html2XhtmlExtractionError{error: zip_extract::ZipExtractError},
+
+    /// Represents an error when trying to start html2xhtml.
+    #[error("Unable to start html2xhtml: {error}")]
+    Html2XhtmlStartError{error: std::io::Error},
+
+    /// Represents an error when trying to find the book title.
+    #[error("Unable to fetch the book title for: {url}")]
+    BookTitleFetchError{url: Url},
+
+    /// Represents an error when trying to find the book author.
+    #[error("Unable to fetch the book author for: {url}")]
+    BookAuthorFetchError{url: Url},
+
+    /// Represents an error when trying to find the book cover image url.
+    #[error("Unable to fetch the book cover image url: {url}")]
+    BookCoverImageUrlFetchError{url: Url},
+
+    /// Represents an error when trying to find the chapter names and urls.
+    /// 
+    /// This typically occurs due to RoyalRoad changing their json scheme.
+    #[error("Unable to fetch the chapter names and urls for: {url}")]
+    BookChapterNameAndUrlFetchError{url: Url},
+
+    /// Represents an error when trying to isolate the chapter content.
+    #[error("Unable to isolate chapter content for: {url}")]
+    ChapterContentIsolationError{url: Url},
+
+    /// Represents an error for when the target os is unsupported.
+    #[error("{os} is unsupported")]
+    OsUnsupportedError{os: Oses},
+
+    /// Represents an error that shows the generation method is unsupported.
+    #[error("This generation mode is currently unsupported")]
+    GenerationUnsupportedError,
+}
+
+
+/// A struct that contains a vector of warnings.
+pub struct GenerationWarnings{warnings: Vec<Warning>}
+
+impl GenerationWarnings {
+    fn new() -> Self {
+        GenerationWarnings { 
+            warnings: Vec::new(),
+        }
+    }
+    
+    /// Push a warning into this struct.
+    pub fn add_warning(&mut self, warning: Warning) {
+        self.warnings.push(warning);
+    }
+
+    pub fn get_warnings(&self) -> &Vec<Warning> {
+        &self.warnings
+    }
+
+    /// Returns how many warnings have been accumulated.
+    pub fn warnings_count(&self) -> usize {
+        self.warnings.len()
+    }
+}
+
+/// An enum to represent a warning.
+#[derive(Error, Debug)]
+pub enum Warning {
+    /// Warning for when no ``content-type`` header can be found in the Response headers.
+    #[error("{warning_msg}")]
+    MissingContentType {
+        warning_msg: String,
+        url: Url,
+        error: ToStrError,
+    },
+
+    /// Warning for when a temporary directory is unable to be deleted.
+    #[error("{warning_msg}")]
+    TempDirDeletionError {
+        warning_msg: String,
+        temp_directory_path: PathBuf,
+        error: std::io::Error,
+    },
+
+    /// Warning for when the program can not parse a url in an image tag.
+    #[error("{warning_msg}")]
+    ImageTagParseError {
+        warning_msg: String,
+        raw_image_tag: String,
+        error: url::ParseError,
     }
 }

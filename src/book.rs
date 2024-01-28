@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use crate::misc::HashMapExt;
+use crate::{misc::HashMapExt, GenerationError};
 use scraper::Html;
 use url::Url;
 
@@ -37,10 +37,10 @@ pub struct Book {
 
 impl Book {
     /// Generate a new book instance with all the needed data from a given url.
-    pub fn new(book_url: Url) -> Book {
-        let index_html = html::string_to_html_document(&http::get_response(book_url.clone()).get_text());
+    pub fn new(book_url: Url) -> Result<Book, GenerationError> {
+        let index_html = html::string_to_html_document(&http::get_response(book_url.clone())?.get_text()?);
 
-        let chapter_names_and_urls = html::get_chapter_names_and_urls_from_index(&index_html);
+        let chapter_names_and_urls = html::get_chapter_names_and_urls_from_index(&index_html, &book_url)?;
         let mut chapters: Vec<Chapter> = Vec::with_capacity(chapter_names_and_urls.len());
 
         let mut image_urls_and_tags: HashMap<Url, Vec<String>> = HashMap::new();
@@ -56,7 +56,7 @@ impl Book {
 
         // Generate the chapters and add em to the book.
         for i in 0..chapter_names_and_urls.len() {
-            let chapter = Chapter::new(&chapter_names_and_urls[i][0], &chapter_names_and_urls[i][1]);
+            let chapter = Chapter::new(&chapter_names_and_urls[i].0, &chapter_names_and_urls[i].1)?;
 
             // extract the image urls and add em to the image_urls_and_tags hashmap.
             image_urls_and_tags = image_urls_and_tags.join(html::extract_urls_and_img_tag(&chapter.isolated_chapter_html));
@@ -68,18 +68,20 @@ impl Book {
 
         progress_bar.finish();
 
-        let title = html::get_title_from_index(&index_html);
+        let title = html::get_title_from_index(&index_html, &book_url)?;
 
-        Book { 
+        let book = Book {
+            author: html::get_author_from_index(&index_html, &book_url)?,
+            cover_image_url: html::get_cover_image_url_from_index(&index_html, &book_url)?,
             book_url: book_url, 
             title: title.clone(),
             file_name_title: remove_illegal_chars(title),
-            author: html::get_author_from_index(&index_html),
-            cover_image_url: http::string_to_url(&html::get_cover_image_url_from_index(&index_html)),
             index_html: index_html,
             chapters: chapters,
             image_urls_and_tags: image_urls_and_tags,
-        }
+        };
+
+        return Ok(book);
     }
 
     /// Count how many paragraphs are in the book.
@@ -105,15 +107,17 @@ pub struct Chapter {
 }
 
 impl Chapter {
-    fn new(chapter_name: &str, chapter_url: &str) -> Self {
-        let chapter_url = http::string_to_url(&chapter_url);
-        let raw_chapter_html = html::string_to_html_document(&http::get_response(chapter_url.clone()).get_text());
+    fn new(chapter_name: &str, chapter_url: &str) -> Result<Self, GenerationError> {
+        let chapter_url = http::string_to_url(&chapter_url)?;
+        let raw_chapter_html = html::string_to_html_document(&http::get_response(chapter_url.clone())?.get_text()?);
 
-        Chapter {
+        let chapter = Chapter {
+            isolated_chapter_html: html::isolate_chapter_content(&raw_chapter_html, &chapter_url)?,
             chapter_url: chapter_url, 
             chapter_name: chapter_name.to_string(),
-            isolated_chapter_html: html::isolate_chapter_content(&raw_chapter_html),
             raw_chapter_html: raw_chapter_html,
-        }
+        };
+
+        return Ok(chapter);
     }
 }

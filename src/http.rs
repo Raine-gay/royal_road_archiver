@@ -1,7 +1,9 @@
-use std::{collections::HashMap, process::exit};
+use std::collections::HashMap;
 
 use reqwest::{blocking::Response, header::HeaderMap};
 use url::Url;
+
+use crate::{GenerationError, Warning, WARNINGS};
 
 // A struct representing an HttpResponse and the Url it originated from.
 pub struct HttpResponse {
@@ -16,24 +18,18 @@ impl HttpResponse {
     }
 
     /// Attempt to convert the response to text. Exits the program if it fails.
-    pub fn get_text(self) -> String {
+    pub fn get_text(self) -> Result<String, GenerationError> {
         match self.response.text() {
-            Ok(response_text) => response_text,
-            Err(error) => {
-                eprintln!("Error! Unable to convert response from {0} into text\n{error}", self.url);
-                exit(1);
-            }
+            Ok(response_text) => Ok(response_text),
+            Err(error) => Err(GenerationError::ResponseConvertToTextError {error}),
         }
     }
 
     /// Attempt to convert the response to bytes. Used for images. Exits the program if it fails.
-    pub fn get_bytes(self) -> bytes::Bytes{
+    pub fn get_bytes(self) -> Result<bytes::Bytes, GenerationError>{
         match self.response.bytes() {
-            Ok(response_bytes) => response_bytes,
-            Err(error) => {
-                eprintln!("Error! Unable to convert response from {0} into bytes\n{error}", self.url);
-                exit(1);
-            }
+            Ok(response_bytes) => Ok(response_bytes),
+            Err(error) => Err(GenerationError::ResponseConvertToBytesError {error}),
         }
     }
 
@@ -52,7 +48,13 @@ impl HttpResponse {
         let content_type = match self.get_headers()["content-type"].to_str() {
             Ok(content_type) => content_type,
             Err(warning) => {
-                eprintln!("Warning! Unable to get content type from the http-header: {warning}");
+                let warning = Warning::MissingContentType { 
+                    warning_msg: "Unable to find or parse the content-type header".to_string(), 
+                    url: self.url.clone(),
+                    error: warning,
+                };
+                WARNINGS.lock().unwrap().add_warning(warning);
+                
                 return (String::with_capacity(0), String::with_capacity(0));
             }
         };
@@ -67,25 +69,19 @@ impl HttpResponse {
 }
 
 /// Get an http response for a given url. Exits the program if it fails.
-pub fn get_response(url: Url) -> HttpResponse {
+pub fn get_response(url: Url) -> Result<HttpResponse, GenerationError> {
     let response_result = reqwest::blocking::get(url.clone());
 
     match response_result {
-        Ok(response) => HttpResponse { url, response },
-        Err(error) => {
-            eprintln!("Error! Unable to get a response from: {url}\n{error}");
-            exit(1);
-        },
+        Ok(response) => Ok(HttpResponse { url, response }),
+        Err(error) => return Err(GenerationError::ResponseGetError {error, url}),
     }
 }
 
 /// A function to convert a string to a url. Exits the program if it fails.
-pub fn string_to_url(url: &str) -> Url {
+pub fn string_to_url(url: &str) -> Result<Url, GenerationError> {
     match Url::parse(url) {
-        Ok(url) => url,
-        Err(error) => {
-            eprintln!("Error! Unable to parse: {url} into a valid url.\n{error}");
-            exit(1);
-        }
+        Ok(url) => Ok(url),
+        Err(error) => Err(GenerationError::UrlParseError {error, string_url: url.to_string()}),
     }
 }

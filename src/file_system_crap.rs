@@ -1,7 +1,9 @@
-use std::{io::Cursor, path::PathBuf, process::exit};
+use std::{io::Cursor, path::PathBuf};
 
 use path_slash::PathBufExt as _;
 use tempdir::TempDir;
+
+use crate::{misc, GenerationError, Warning, WARNINGS};
 
 /// Converts a given path to windows style if needed.
 pub fn convert_path_to_os_specific(path: PathBuf) -> PathBuf {
@@ -28,65 +30,60 @@ pub fn remove_illegal_chars(mut string: String) -> String {
 }
 
 /// Setup html2xhtml in the operating system's temp directory.
-pub fn setup_html2xhtml() -> TempDir {
+pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
     #[cfg(target_os = "windows")] {
         const HTML2XHTML: &[u8; 245025] = include_bytes!("../html2xhtml-windows.zip"); // This will not compile on windows due to this and no I don't give a shit.
                                                                                        // Compile it on linux for windows like a sane person.
-        let html2xhtml_dir = match TempDir::new("html2xhtml-windows") {
+        let html2xhtml_temp_dir = match TempDir::new("html2xhtml-windows") {
             Ok(temp_dir) => temp_dir,
-            Err(error) => {
-                eprintln!("Error! Unable to create temp directory: {error}");
-                exit(1);
-            }
+            Err(error) => return Err(GenerationError::TempDirCreationError {error}),
         };
 
-        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_dir.path(), true) {
+        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_temp_dir.path(), true) {
             Ok(_) => (),
-            Err(error) => {
-                eprintln!("Error! Unable to extract html2xhtml into into the temp directory\n{error}");
-                exit(1);
-            }
+            Err(error) => return Err(GenerationError::Html2XhtmlExtractionError {error}),
         }
 
-        return html2xhtml_dir;
+        return Ok(html2xhtml_temp_dir);
     }
 
     #[cfg(target_os = "linux")] {
         const HTML2XHTML: &[u8; 186938] = include_bytes!("../html2xhtml-linux.zip");
-        let html2xhtml_dir = match TempDir::new("html2xhtml-linux") {
+        let html2xhtml_temp_dir = match TempDir::new("html2xhtml-linux") {
             Ok(temp_dir) => temp_dir,
-            Err(error) => {
-                eprintln!("Error! Unable to create temp directory: {error}");
-                exit(1);
-            }
+            Err(error) => return Err(GenerationError::TempDirCreationError {error}),
         };
 
-        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_dir.path(), true) {
+        match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_temp_dir.path(), true) {
             Ok(_) => (),
-            Err(error) => {
-                eprintln!("Error! Unable to extract html2xhtml into the temp directory\n{error}");
-                exit(1);
-            }
+            Err(error) => return Err(GenerationError::Html2XhtmlExtractionError {error}),
         }
 
-        return html2xhtml_dir;
+        return Ok(html2xhtml_temp_dir);
     }
 
     #[cfg(target_os = "macos")] {
-        // TODO!
-        // You can find the macos tempdir by doing: echo $TMPDIR
-
-        eprint!("Error! This mode does not currently support MacOS. Try either html mode or markdown mode.");
-        exit(1);
+        Err(GenerationError::OsUnsupportedError {os: misc::Oses::MacOs})
     }
+    
+    // In the event the OS is unknown.
+    #[allow(unreachable_code)]
+    Err(GenerationError::OsUnsupportedError {os: misc::Oses::OtherUnknownOs})
 }
 
 /// Delete html2xhtml from the operating system's temp directory.
 pub fn delete_html2xhtml(html2xhtml_dir: TempDir) {
+    let temp_dir_path = html2xhtml_dir.path().to_path_buf();
+
     match html2xhtml_dir.close() {
         Ok(_) => (),
         Err(warning) => {
-            eprintln!("Warning! Unable to close & delete temp directory: {warning}");
+            let warning = Warning::TempDirDeletionError { 
+                warning_msg: "Unable to close and delete temp directory".to_string(), 
+                temp_directory_path: temp_dir_path, 
+                error: warning 
+            };
+            WARNINGS.lock().unwrap().add_warning(warning);
         }
     }
 }

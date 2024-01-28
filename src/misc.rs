@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 /// An extension to ``std::collections::HashMap<K, Vec<String>>``
 pub trait HashMapExt<K> {
@@ -30,5 +30,21 @@ impl<K: std::cmp::Eq + std::hash::Hash + std::clone::Clone> HashMapExt<K> for Ha
         }
 
         return self;
+    }
+}
+
+/// A list of Oses for error handling purposes.
+#[derive(Debug)]
+pub enum Oses {
+    Windows,
+    Linux,
+    MacOs,
+    OtherUnknownOs,
+}
+
+/// Implement display for Oses.
+impl Display for Oses {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
