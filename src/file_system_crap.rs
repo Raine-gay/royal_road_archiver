@@ -1,7 +1,7 @@
 use std::{io::Cursor, path::PathBuf};
 
 use path_slash::PathBufExt as _;
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 use crate::{misc, GenerationError, Warning, WARNINGS};
 
@@ -34,7 +34,7 @@ pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
     #[cfg(target_os = "windows")] {
         const HTML2XHTML: &[u8; 245025] = include_bytes!("../html2xhtml-windows.zip"); // This will not compile on windows due to this and no I don't give a shit.
                                                                                        // Compile it on linux for windows like a sane person.
-        let html2xhtml_temp_dir = match TempDir::new("html2xhtml-windows") {
+        let html2xhtml_temp_dir = match TempDir::new() {
             Ok(temp_dir) => temp_dir,
             Err(error) => return Err(GenerationError::TempDirCreationError {error}),
         };
@@ -49,7 +49,7 @@ pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
 
     #[cfg(target_os = "linux")] {
         const HTML2XHTML: &[u8; 186938] = include_bytes!("../html2xhtml-linux.zip");
-        let html2xhtml_temp_dir = match TempDir::new("html2xhtml-linux") {
+        let html2xhtml_temp_dir = match TempDir::new() {
             Ok(temp_dir) => temp_dir,
             Err(error) => return Err(GenerationError::TempDirCreationError {error}),
         };

@@ -2,7 +2,7 @@ use std::{collections::HashMap, io::Write, process::{Command, Stdio}};
 
 use regex::Regex;
 use scraper::{Html, Selector};
-use tempdir::TempDir;
+use tempfile::TempDir;
 use url::Url;
 
 use crate::{http, misc::HashMapExt, GenerationError, Warning, WARNINGS};
