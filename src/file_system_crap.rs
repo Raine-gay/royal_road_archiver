@@ -34,10 +34,7 @@ pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
     #[cfg(target_os = "windows")] {
         const HTML2XHTML: &[u8; 245025] = include_bytes!("../html2xhtml-windows.zip"); // This will not compile on windows due to this and no I don't give a shit.
                                                                                        // Compile it on linux for windows like a sane person.
-        let html2xhtml_temp_dir = match TempDir::new() {
-            Ok(temp_dir) => temp_dir,
-            Err(error) => return Err(GenerationError::TempDirCreationError {error}),
-        };
+        let html2xhtml_temp_dir = create_temp_dir()?;
 
         match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_temp_dir.path(), true) {
             Ok(_) => (),
@@ -49,10 +46,7 @@ pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
 
     #[cfg(target_os = "linux")] {
         const HTML2XHTML: &[u8; 186938] = include_bytes!("../html2xhtml-linux.zip");
-        let html2xhtml_temp_dir = match TempDir::new() {
-            Ok(temp_dir) => temp_dir,
-            Err(error) => return Err(GenerationError::TempDirCreationError {error}),
-        };
+        let html2xhtml_temp_dir = create_temp_dir()?;
 
         match zip_extract::extract(Cursor::new(HTML2XHTML), html2xhtml_temp_dir.path(), true) {
             Ok(_) => (),
@@ -71,11 +65,19 @@ pub fn setup_html2xhtml() -> Result<TempDir, GenerationError> {
     Err(GenerationError::OsUnsupportedError {os: misc::Oses::OtherUnknownOs})
 }
 
-/// Delete html2xhtml from the operating system's temp directory.
-pub fn delete_html2xhtml(html2xhtml_dir: TempDir) {
-    let temp_dir_path = html2xhtml_dir.path().to_path_buf();
+/// Function to create a temporary directory.
+fn create_temp_dir() -> Result<TempDir, GenerationError> {
+    match TempDir::new() {
+        Ok(temp_dir) => return Ok(temp_dir),
+        Err(error) => return Err(GenerationError::TempDirCreationError {error}),
+    }
+}
 
-    match html2xhtml_dir.close() {
+/// Delete a temporary directory.
+pub fn delete_temp_dir(temp_dir: TempDir) {
+    let temp_dir_path = temp_dir.path().to_path_buf();
+
+    match temp_dir.close() {
         Ok(_) => (),
         Err(warning) => {
             let warning = Warning::TempDirDeletionError { 

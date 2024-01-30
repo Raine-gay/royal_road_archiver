@@ -124,7 +124,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
     epub_builder.inline_toc();
 
     // Setup html2xhtml on the operating system.
-    let html2xhtml_dir = file_system_crap::setup_html2xhtml()?;
+    let html2xhtml_temp_dir = file_system_crap::setup_html2xhtml()?;
 
     let mut old_tags_new_tags: HashMap<String, String> = HashMap::new();
 
@@ -165,7 +165,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
 
         let xhtml: String;
         if epub_args.no_images {
-            xhtml = html_to_xhtml(string_to_html_fragment(&remove_image_tags(&chapter.isolated_chapter_html)), &html2xhtml_dir)?
+            xhtml = html_to_xhtml(string_to_html_fragment(&remove_image_tags(&chapter.isolated_chapter_html)), &html2xhtml_temp_dir)?
         }
         else {
             let mut replaced_html = chapter.isolated_chapter_html.html();
@@ -173,7 +173,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
                 replaced_html = replaced_html.replace(&old_img_tag.clone(), &old_tags_new_tags[old_img_tag]);
             }
 
-            xhtml = html_to_xhtml(string_to_html_fragment(&replaced_html), &html2xhtml_dir)?;
+            xhtml = html_to_xhtml(string_to_html_fragment(&replaced_html), &html2xhtml_temp_dir)?;
         }
 
         epub_builder.add_content(EpubContent::new(format!("chapter_{}.xhtml", i+1), xhtml.as_bytes())
@@ -199,7 +199,7 @@ pub fn generate_epub(epub_args: EpubArgs, book_url: Url, output_directory: PathB
         .expect(format!("Unable to write finished epub data to {0}", output_path.to_string_lossy()).as_str());
 
     // Delete the html2xhtml temp directory. It's good to clean up after yourself.
-    file_system_crap::delete_html2xhtml(html2xhtml_dir);
+    file_system_crap::delete_temp_dir(html2xhtml_temp_dir);
 
     Ok(WARNINGS.lock().unwrap())
 }
