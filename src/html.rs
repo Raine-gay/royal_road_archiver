@@ -1,4 +1,8 @@
-use std::{collections::HashMap, io::Write, process::{Command, Stdio}};
+use std::{
+    collections::HashMap,
+    io::Write,
+    process::{Command, Stdio},
+};
 
 use regex::Regex;
 use scraper::{Html, Selector};
@@ -20,21 +24,23 @@ pub fn string_to_html_fragment(fragment_string: &str) -> Html {
 /// Get the book's title from the index.
 pub fn get_title_from_index(index_html: &Html, book_url: &Url) -> Result<String, GenerationError> {
     let selector = Selector::parse("meta").unwrap(); // Build a selector that finds the 'meta' html tag
-        for element in index_html.select(&selector) {
-            // Loop through all meta tags in the html document.
-            match element.value().attr("name") {
-                // Check if the meta tag contains attribute: "name"
-                None => continue,
-                Some(x) => {
-                    if x == "twitter:title" {
-                        // If it does contain attribute "name", check if the content of that attribute is "twitter:title"
-                        return Ok(element.value().attr("content").unwrap().to_owned());
-                        // If it is, extract the data from the content attribute.
-                    }
+    for element in index_html.select(&selector) {
+        // Loop through all meta tags in the html document.
+        match element.value().attr("name") {
+            // Check if the meta tag contains attribute: "name"
+            None => continue,
+            Some(x) => {
+                if x == "twitter:title" {
+                    // If it does contain attribute "name", check if the content of that attribute is "twitter:title"
+                    return Ok(element.value().attr("content").unwrap().to_owned());
+                    // If it is, extract the data from the content attribute.
                 }
-            }
+            },
         }
-    Err(GenerationError::BookTitleFetchError{url: book_url.clone()})
+    }
+    Err(GenerationError::BookTitleFetchError {
+        url: book_url.clone(),
+    })
 }
 
 /// Get the book's author from index
@@ -47,14 +53,19 @@ pub fn get_author_from_index(index_html: &Html, book_url: &Url) -> Result<String
                 if x == "books:author" {
                     return Ok(element.value().attr("content").unwrap().to_owned());
                 }
-            }
+            },
         }
     }
-    Err(GenerationError::BookAuthorFetchError{url: book_url.clone()})
+    Err(GenerationError::BookAuthorFetchError {
+        url: book_url.clone(),
+    })
 }
 
 /// Get the book's cover image url from the index
-pub fn get_cover_image_url_from_index(index_html: &Html, book_url: &Url) -> Result<Url, GenerationError> {
+pub fn get_cover_image_url_from_index(
+    index_html: &Html,
+    book_url: &Url,
+) -> Result<Url, GenerationError> {
     let selector = Selector::parse("meta").unwrap();
     for element in index_html.select(&selector) {
         match element.value().attr("property") {
@@ -63,16 +74,21 @@ pub fn get_cover_image_url_from_index(index_html: &Html, book_url: &Url) -> Resu
                 if x == "og:image" {
                     return http::string_to_url(element.value().attr("content").unwrap());
                 }
-            }
+            },
         }
     }
-    Err(GenerationError::BookCoverImageUrlFetchError{url: book_url.clone()})
+    Err(GenerationError::BookCoverImageUrlFetchError {
+        url: book_url.clone(),
+    })
 }
 
 /// Gets the chapter names and urls from the index.
-/// 
+///
 /// This gets stored in a vector where index 0 is the chapter name, and index 1 is the url.
-pub fn get_chapter_names_and_urls_from_index(index_html: &Html, book_url: &Url) -> Result<Vec<(String, String)>, GenerationError> {
+pub fn get_chapter_names_and_urls_from_index(
+    index_html: &Html,
+    book_url: &Url,
+) -> Result<Vec<(String, String)>, GenerationError> {
     // I wont lie. I have almost 0 idea what a bunch of this shit does since it's highly specific to RoyalRoad.
     // I've commented in the gist of it, but we have no memory actually writing this function.
 
@@ -89,7 +105,9 @@ pub fn get_chapter_names_and_urls_from_index(index_html: &Html, book_url: &Url) 
     }
     // Exit it if unable to find the needed json data. That probably means royal road has changed their code.
     if raw_json_data.is_empty() {
-        return Err(GenerationError::BookChapterNameAndUrlFetchError { url: book_url.clone()});
+        return Err(GenerationError::BookChapterNameAndUrlFetchError {
+            url: book_url.clone(),
+        });
     }
 
     // I have absolutely no idea what this regex does; but it's probably important.
@@ -122,7 +140,10 @@ pub fn get_chapter_names_and_urls_from_index(index_html: &Html, book_url: &Url) 
 }
 
 /// Isolate chapter content from the rest of the shit on the page.
-pub fn isolate_chapter_content(raw_chapter_html: &Html, chapter_url: &Url) -> Result<Html, GenerationError> {
+pub fn isolate_chapter_content(
+    raw_chapter_html: &Html,
+    chapter_url: &Url,
+) -> Result<Html, GenerationError> {
     let page_html = Html::parse_document(&raw_chapter_html.html());
 
     let selector = Selector::parse("div").unwrap();
@@ -133,10 +154,12 @@ pub fn isolate_chapter_content(raw_chapter_html: &Html, chapter_url: &Url) -> Re
                 if x == "chapter-inner chapter-content" {
                     return Ok(string_to_html_fragment(&element.inner_html()));
                 }
-            }
+            },
         }
     }
-    Err(GenerationError::ChapterContentIsolationError{url: chapter_url.clone()})
+    Err(GenerationError::ChapterContentIsolationError {
+        url: chapter_url.clone(),
+    })
 }
 
 /// Remove all img tags from the html fragment.
@@ -169,17 +192,19 @@ pub fn extract_urls_and_img_tag(chapter_html: &Html) -> HashMap<Url, Vec<String>
         let url = element.attr("src");
         let image_tag = element.html();
 
-        if url.is_none() { continue; }
+        if url.is_none() {
+            continue;
+        }
         let url = match Url::parse(url.unwrap()) {
             Ok(url) => url,
             Err(warning) => {
-                let warning = Warning::ImageTagParseError { 
-                    warning_msg: "Unable to parse url in image tag".to_string(), 
-                    raw_image_tag: image_tag, 
-                    error: warning, 
+                let warning = Warning::ImageTagParseError {
+                    warning_msg: "Unable to parse url in image tag".to_string(),
+                    raw_image_tag: image_tag,
+                    error: warning,
                 };
                 WARNINGS.lock().unwrap().add_warning(warning);
-                
+
                 continue;
             },
         };
@@ -199,16 +224,19 @@ pub fn replace_img_src(img_tag: String, new_src: String) -> String {
     let selector = Selector::parse("img").unwrap();
     let element = img_tag.select(&selector).next().unwrap();
 
-
     if element.attr("src").is_some() {
         let image_tag = element.html();
 
         let src_match_regex = Regex::new(r#"(src=["'].*["'])"#).unwrap();
-        let src_attr = src_match_regex.captures(&image_tag).unwrap().get(0).map(|m| m.as_str()).unwrap();
+        let src_attr = src_match_regex
+            .captures(&image_tag)
+            .unwrap()
+            .get(0)
+            .map(|m| m.as_str())
+            .unwrap();
 
         return image_tag.replace(src_attr, &format!(r#"src="{new_src}""#));
-    }
-    else {
+    } else {
         return element.html();
     }
 }
@@ -234,11 +262,16 @@ pub fn html_to_xhtml(html: Html, html2xhtml_dir: &TempDir) -> Result<String, Gen
         .spawn()
     {
         Ok(child) => child,
-        Err(error) => return Err(GenerationError::Html2XhtmlStartError{error}),
+        Err(error) => return Err(GenerationError::Html2XhtmlStartError { error }),
     };
 
     // Write the html to the stdin, then wait for xhtml to be outputted to the stdout.
-    html2xhtml.stdin.as_mut().unwrap().write_all(html.as_bytes()).unwrap();
+    html2xhtml
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(html.as_bytes())
+        .unwrap();
     let html2xhtml_output = html2xhtml.wait_with_output().unwrap();
 
     // Generate a lossy string from the stdout.

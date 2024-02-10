@@ -1,4 +1,8 @@
-use std::{env, fs, path::{Path, PathBuf}, process::exit};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    process::exit,
+};
 
 use clap::{Parser, Subcommand};
 use royal_road_archiver_lib::GenerationError;
@@ -48,23 +52,33 @@ fn main() {
         },
         None => {
             output_directory = env::current_dir().unwrap();
-        }
+        },
     }
 
     valid_directory_check(&output_directory);
     let book_url = valid_url_check(&cli_input.book_url.to_lowercase());
 
-    let result: Result<std::sync::MutexGuard<'_, royal_road_archiver_lib::GenerationWarnings>, GenerationError> = match cli_input.subcommand {
-        Subcommands::Audiobook(audiobook_args) => royal_road_archiver_lib::generate_audiobook(audiobook_args, book_url, output_directory),
-        Subcommands::Epub(epub_args) => royal_road_archiver_lib::generate_epub(epub_args, book_url, output_directory),
-        Subcommands::Html(html_args) => royal_road_archiver_lib::generate_html(html_args, book_url, output_directory),
-        Subcommands::Markdown(markdown_args) => royal_road_archiver_lib::generate_markdown(markdown_args, book_url, output_directory),
+    let result: Result<
+        std::sync::MutexGuard<'_, royal_road_archiver_lib::GenerationWarnings>,
+        GenerationError,
+    > = match cli_input.subcommand {
+        Subcommands::Audiobook(audiobook_args) => {
+            royal_road_archiver_lib::generate_audiobook(audiobook_args, book_url, output_directory)
+        },
+        Subcommands::Epub(epub_args) => {
+            royal_road_archiver_lib::generate_epub(epub_args, book_url, output_directory)
+        },
+        Subcommands::Html(html_args) => {
+            royal_road_archiver_lib::generate_html(html_args, book_url, output_directory)
+        },
+        Subcommands::Markdown(markdown_args) => {
+            royal_road_archiver_lib::generate_markdown(markdown_args, book_url, output_directory)
+        },
     };
 
     match result {
         Ok(generation_warnings) => {
             if !&generation_warnings.warnings_count() == 0 {
-                
                 println!("The following warnings were generated:");
                 for warning in generation_warnings.get_warnings() {
                     println!("\n{warning}");
@@ -73,12 +87,12 @@ fn main() {
         },
         Err(generation_error) => {
             eprintln!("{}", generation_error);
-        }
+        },
     }
 }
 
 /// Check if the directory exists and is writeable. Creates one if not.
-/// 
+///
 /// Exits the program of failure.
 fn valid_directory_check(output_directory: &Path) {
     // Check if the directory exists, if it does not; attempt to create one.
@@ -88,7 +102,7 @@ fn valid_directory_check(output_directory: &Path) {
             Err(error) => {
                 eprintln!("Error! Unable to create directory: {error}");
                 exit(1);
-            }
+            },
         }
     }
 }
@@ -97,11 +111,9 @@ fn valid_directory_check(output_directory: &Path) {
 fn valid_url_check(book_url: &str) -> Url {
     match Url::parse(book_url) {
         Ok(book_url) => {
-
             if book_url.host_str() == Some("www.royalroad.com") {
                 return book_url;
-            }
-            else {
+            } else {
                 eprintln!("Error! Please enter a RoyalRoad URL.");
                 exit(1);
             }
@@ -109,6 +121,6 @@ fn valid_url_check(book_url: &str) -> Url {
         Err(error) => {
             eprintln!("Error! Unable to parse url: {book_url}\n{error}");
             exit(1);
-        }
+        },
     }
 }
