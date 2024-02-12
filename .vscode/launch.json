@@ -26,34 +26,34 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'royal_road_archiver_bin'",
+            "name": "Debug executable 'royal_road_archiver'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=royal_road_archiver_bin",
+                    "--bin=royal_road_archiver",
                     "--package=royal_road_archiver"
                 ],
                 "filter": {
-                    "name": "royal_road_archiver_bin",
+                    "name": "royal_road_archiver",
                     "kind": "bin"
                 }
             },
-            "args": ["https://www.royalroad.com/fiction/22848/post-human", "markdown"],
+            "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'royal_road_archiver_bin'",
+            "name": "Debug unit tests in executable 'royal_road_archiver'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=royal_road_archiver_bin",
+                    "--bin=royal_road_archiver",
                     "--package=royal_road_archiver"
                 ],
                 "filter": {
-                    "name": "royal_road_archiver_bin",
+                    "name": "royal_road_archiver",
                     "kind": "bin"
                 }
             },
