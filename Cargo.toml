@@ -1,6 +1,6 @@
 [package]
 name = "royal_road_archiver"
-version = "1.0.3"
+version = "2.0.0"
 edition = "2021"
 description = "An archival program and library for the webnovel site RoyalRoad."
 repository = "https://github.com/Raine-gay/royal_road_archiver"
